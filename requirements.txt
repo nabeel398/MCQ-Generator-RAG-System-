@@ -1,0 +1,15 @@
+fastapi
+uvicorn[standard]
+python-multipart
+python-docx
+python-pptx
+PyMuPDF  # PDF reading (import as fitz)
+faiss-cpu
+sentence-transformers
+pydantic
+numpy
+scipy
+torch
+transformers
+langchain
+tqdm

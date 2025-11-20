@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MCQ RAG System</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body>
+    <div class="container py-5">
+        <h1 class="text-center mb-4">MCQ Generator (RAG System)</h1>
+
+        <div class="card mb-4">
+            <div class="card-header">Upload Documents</div>
+            <div class="card-body">
+                <input type="file" id="fileInput" multiple class="form-control mb-3" />
+                <button class="btn btn-primary" onclick="uploadFiles()">Upload</button>
+                <div id="uploadStatus" class="mt-2"></div>
+            </div>
+        </div>
+
+        <div class="card mb-4">
+            <div class="card-header">Generate MCQs</div>
+            <div class="card-body">
+                <div class="mb-3">
+                    <label for="numMcqs" class="form-label">Number of MCQs:</label>
+                    <input type="number" id="numMcqs" min="1" max="20" value="5" class="form-control" />
+                </div>
+                <button class="btn btn-success" onclick="getMCQs()">Generate</button>
+                <div id="mcqStatus" class="mt-2"></div>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-header">Generated MCQs</div>
+            <div class="card-body">
+                <table class="table table-bordered" id="mcqTable">
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>Question</th>
+                            <th>Choices</th>
+                            <th>Answer</th>
+                        </tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        async function uploadFiles() {
+            const files = document.getElementById('fileInput').files;
+            if (files.length === 0) {
+                alert('Please select files to upload.');
+                return;
+            }
+
+            const formData = new FormData();
+            for (let file of files) {
+                formData.append('files', file);
+            }
+
+            document.getElementById('uploadStatus').innerHTML = '<span class="text-warning">Uploading...</span>';
+
+            try {
+                const response = await fetch('http://127.0.0.1:8000/upload/', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const result = await response.json();
+                document.getElementById('uploadStatus').innerHTML = `<span class="text-success">${result.status}</span>`;
+            } catch (error) {
+                document.getElementById('uploadStatus').innerHTML = '<span class="text-danger">Upload failed.</span>';
+            }
+        }
+
+        async function getMCQs() {
+            const numMcqs = document.getElementById('numMcqs').value;
+            document.getElementById('mcqStatus').innerHTML = '<span class="text-warning">Generating MCQs...</span>';
+
+            try {
+                const response = await fetch(`http://127.0.0.1:8000/mcqs/${numMcqs}`);
+                const data = await response.json();
+
+                const tableBody = document.querySelector('#mcqTable tbody');
+                tableBody.innerHTML = '';
+
+                if (data.mcqs && data.mcqs.length > 0) {
+                    data.mcqs.forEach((mcq, index) => {
+                        const row = document.createElement('tr');
+                        const choiceLabels = ['A', 'B', 'C', 'D'];
+                        const choicesHTML = mcq.choices.map((choice, idx) => `<div><strong>${choiceLabels[idx]}.</strong> ${choice}</div>`).join('');
+
+                        row.innerHTML = `
+                            <td>${index + 1}</td>
+                            <td>${mcq.question}</td>
+                            <td>${choicesHTML}</td>
+                            <td>${mcq.answer}</td>
+                        `;
+                        tableBody.appendChild(row);
+                    });
+                    document.getElementById('mcqStatus').innerHTML = '<span class="text-success">MCQs Generated.</span>';
+                } else {
+                    document.getElementById('mcqStatus').innerHTML = '<span class="text-danger">No MCQs found.</span>';
+                }
+
+            } catch (error) {
+                document.getElementById('mcqStatus').innerHTML = '<span class="text-danger">Failed to fetch MCQs.</span>';
+            }
+        }
+    </script>
+</body>
+</html>
